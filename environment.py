@@ -1,41 +1,51 @@
 from saver import Saver
 
-from colorama import Fore
 import random
 import sys
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
+from common import *
 
 try:
     sys.path.append("carla-0.9.5-py3.5-linux-x86_64.egg")
 except IndexError:
-    print(Fore.YELLOW+'CarlaEnv log: cant append carla #egg'+Fore.WHITE)
+    printc('CarlaEnv log: cant append carla #egg',MsgType.ERROR)
 
 import carla
 from carla import ColorConverter as cc
 
-class CarlaEnv:
-    # attributes
-    port=2000
-    host='127.0.01'
-    actors=[]
-    data={}
-    image_x=800
-    image_y=600
-    fov=110
-    
+class CarlaEnv:    
     def __init__(self):
-        self.saver=Saver()
+        self.intialize_attributes()
+        printc('all attributes initialized')
         
         self.blueprint=self._connect()
-        print(Fore.YELLOW+'client connected'+Fore.WHITE)
+        printc('client connected')
         self.vehicle=self._add_vehicle(self.blueprint)
-        print(Fore.YELLOW+'vehicle spawned'+Fore.WHITE)
+        printc('vehicle spawned')
         self._add_actors()
-        print(Fore.YELLOW+'actors spawned'+Fore.WHITE)
+        printc('actors spawned')
     
     
+    def initialize_attributes(self):
+        # attributes
+        self.port=2000
+        self.host='127.0.01'
+        self.image_x=800
+        self.image_y=600
+        self.fov=110
+
+        # changable attirbutes
+        self.actors=[]
+        self.data={}
+
+        # classes
+        self.saver=Saver()
+        printc('Saver class initialized',level=2)
+
+
+
     def _connect(self):
         self.client=carla.Client(self.host,self.port)
         self.world=self.client.get_world()
@@ -64,6 +74,7 @@ class CarlaEnv:
         rgb = self.world.spawn_actor(rgb, transform, attach_to=self.vehicle)
         rgb.listen(lambda data: self._process_rgb(data))
         self.actors.append(rgb)
+        printc('rgb camera spawned',level=2)
         
         # segmentation cam
         seg = self.blueprint.find('sensor.camera.semantic_segmentation')
@@ -73,6 +84,7 @@ class CarlaEnv:
         seg = self.world.spawn_actor(seg, transform, attach_to=self.vehicle)
         seg.listen(lambda data: self._process_seg(data))
         self.actors.append(seg)
+        printc('rgb camera spawned',level=2)
         
         # depth cam
         dep=self.blueprint.find('sensor.camera.depth')
@@ -82,6 +94,7 @@ class CarlaEnv:
         dep = self.world.spawn_actor(dep, transform, attach_to=self.vehicle)
         dep.listen(lambda data: self._process_depth(data))
         self.actors.append(dep)
+        printc('rgb camera spawned',level=2)
         
 
 
@@ -108,18 +121,19 @@ class CarlaEnv:
         self.client.apply_batch([carla.command.DestroyActor(x)
                                 for x in self.actors])
         cv.destroyAllWindows()
-        print("All actors have been destroyed")
+        printc("All actors and windows have been destroyed")
 
     def step(self,action):
         throttle=action['thr']
         steer=action['ste']
         brake=action['br']
-        control=carla.VehicleControl(throttle,steer,0)
+        control=carla.VehicleControl(throttle,steer,brake)
         self.vehicle.apply_control(control)
 
     def show(self,title,frame):
-        cv.imshow('frame', frame)
-        key = cv.waitKey(1) & 0xFF
+        cv.imshow(title, frame)
+        key = cv.waitKey(1)
+        return key
              
     
     def save(self):
@@ -127,9 +141,15 @@ class CarlaEnv:
         
 
     def render(self,which):
-        if which=='rgb' and 'rgb' in self.data:
-            self.show('rgb',self.data['rgb'])
-        elif which=='dep' and 'dep' in self.data: 
-            self.show('depth',self.data['dep'])
-        elif which=='seg' and 'seg' in self.data:
-            self.show('segmentation',self.data['seg'])
+        if which=='all':
+            for data in self.data.items():
+                k=self.show(*data)
+        else:
+            for data_f in data_frames:
+                if which==data_f and data_f in self.data:
+                    k=self.show(data_f,self.data[data_f])
+        
+
+        # end program by raising exception which will be handled in the main script
+        if k==27: # escape button
+            raise Exception
