@@ -1,0 +1,13 @@
+# client
+port : 2000
+host : '127.0.01'
+
+# cameras
+no_cams : 8
+image_x : 800
+image_y : 600
+fov : 110
+
+# general        
+save : True
+save_interval : 100

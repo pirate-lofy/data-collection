@@ -4,6 +4,8 @@ import random
 import sys
 import numpy as np
 import cv2 as cv
+import yaml
+from attrdict import AttrDict
 import matplotlib.pyplot as plt
 from common import *
 
@@ -17,6 +19,7 @@ from carla import ColorConverter as cc
 
 class CarlaEnv:    
     def __init__(self):
+        self.configs=self._read_configs()
         self.intialize_attributes()
         printc('all attributes initialized')
         
@@ -27,16 +30,16 @@ class CarlaEnv:
         self._add_actors()
         printc('actors spawned')
     
+
+    def _read_configs(self):
+        path='config.yaml'
+        with open(path, 'r', encoding='utf8') as f:
+            config = yaml.safe_load(f)
+        config = AttrDict(config)
+        return config
     
     def initialize_attributes(self):
-        # attributes
-        self.port=2000
-        self.host='127.0.01'
-        self.image_x=800
-        self.image_y=600
-        self.fov=110
-
-        # changable attirbutes
+        self.step=0
         self.actors=[]
         self.data={}
 
@@ -47,7 +50,7 @@ class CarlaEnv:
 
 
     def _connect(self):
-        self.client=carla.Client(self.host,self.port)
+        self.client=carla.Client(self.configs.host,self.configs.port)
         self.world=self.client.get_world()
         self.map=self.world.get_map()
         return self.world.get_blueprint_library()
@@ -60,9 +63,9 @@ class CarlaEnv:
         return vehicle
 
     def _add_actors(self):
-        image_x=self.image_x
-        image_y=self.image_y
-        fov=self.fov
+        image_x=self.configs.image_x
+        image_y=self.configs.image_y
+        fov=self.configs.fov
         
         transform = carla.Transform(carla.Location(x=1.1, y=0, z=2),
                                     carla.Rotation(pitch=0, yaw=0, roll=0))
@@ -97,8 +100,6 @@ class CarlaEnv:
         printc('rgb camera spawned',level=2)
         
 
-
-
     def _process_rgb(self,image):
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
         array = np.reshape(array, (image.height, image.width, 4))
@@ -117,6 +118,10 @@ class CarlaEnv:
         i3=i3.reshape((image.height,image.width,4))[:,:,:3]
         self.data['dep']=i3.copy()
 
+
+    def _flush(self):
+        self.data={}
+
     def close(self):
         self.client.apply_batch([carla.command.DestroyActor(x)
                                 for x in self.actors])
@@ -129,15 +134,22 @@ class CarlaEnv:
         brake=action['br']
         control=carla.VehicleControl(throttle,steer,brake)
         self.vehicle.apply_control(control)
+        self.step+=1
+
+        if self.config.save and \
+            check_saving_interval(self.step,self.configs.saving_interval):
+            self._save()
 
     def show(self,title,frame):
         cv.imshow(title, frame)
         key = cv.waitKey(1)
         return key
-             
+ 
     
-    def save(self):
+    def _save(self):
+        printc('saving data to disk')
         self.saver.save(self.data)
+        self._flush()
         
 
     def render(self,which):
