@@ -1,11 +1,10 @@
 from saver import Saver
+from cameras.camera_wrapper import Wrapper
 
 import random
 import sys
 import numpy as np
 import cv2 as cv
-import yaml
-from attrdict import AttrDict
 import matplotlib.pyplot as plt
 from common import *
 
@@ -19,8 +18,8 @@ from carla import ColorConverter as cc
 
 class CarlaEnv:    
     def __init__(self):
-        self.configs=self._read_configs()
-        self.intialize_attributes()
+        self.configs=read_configs()
+        self.init_attr()
         printc('all attributes initialized')
         
         self.blueprint=self._connect()
@@ -30,22 +29,15 @@ class CarlaEnv:
         self._add_actors()
         printc('actors spawned')
     
-
-    def _read_configs(self):
-        path='config.yaml'
-        with open(path, 'r', encoding='utf8') as f:
-            config = yaml.safe_load(f)
-        config = AttrDict(config)
-        return config
     
-    def initialize_attributes(self):
+    def init_attr(self):
         self.step=0
-        self.actors=[]
-        self.data={}
 
         # classes
-        self.saver=Saver()
+        self.saver=Saver(self.configs)
         printc('Saver class initialized',level=2)
+        self.wrapper=Wrapper(self.configs,self.vehicle)
+        printc('Wrapper class initialized',level=2)
 
 
 
@@ -61,66 +53,7 @@ class CarlaEnv:
         vehicle=self.world.spawn_actor(car,transform)
         self.actors.append(vehicle)
         return vehicle
-
-    def _add_actors(self):
-        image_x=self.configs.image_x
-        image_y=self.configs.image_y
-        fov=self.configs.fov
         
-        transform = carla.Transform(carla.Location(x=1.1, y=0, z=2),
-                                    carla.Rotation(pitch=0, yaw=0, roll=0))
-        # rgb cam
-        rgb = self.blueprint.find('sensor.camera.rgb')
-        rgb.set_attribute('image_size_x', f"{image_x}")
-        rgb.set_attribute('image_size_y', f"{image_y}")
-        rgb.set_attribute('fov', f"{fov}")
-        rgb = self.world.spawn_actor(rgb, transform, attach_to=self.vehicle)
-        rgb.listen(lambda data: self._process_rgb(data))
-        self.actors.append(rgb)
-        printc('rgb camera spawned',level=2)
-        
-        # segmentation cam
-        seg = self.blueprint.find('sensor.camera.semantic_segmentation')
-        seg.set_attribute('image_size_x', f"{image_x}")
-        seg.set_attribute('image_size_y', f"{image_y}")
-        seg.set_attribute('fov', f'{fov}')
-        seg = self.world.spawn_actor(seg, transform, attach_to=self.vehicle)
-        seg.listen(lambda data: self._process_seg(data))
-        self.actors.append(seg)
-        printc('rgb camera spawned',level=2)
-        
-        # depth cam
-        dep=self.blueprint.find('sensor.camera.depth')
-        dep.set_attribute('image_size_x', f"{image_x}")
-        dep.set_attribute('image_size_y', f"{image_y}")
-        dep.set_attribute('fov', f'{fov}')
-        dep = self.world.spawn_actor(dep, transform, attach_to=self.vehicle)
-        dep.listen(lambda data: self._process_depth(data))
-        self.actors.append(dep)
-        printc('rgb camera spawned',level=2)
-        
-
-    def _process_rgb(self,image):
-        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
-        array = np.reshape(array, (image.height, image.width, 4))
-        array = array[:, :, :3]
-        self.data['rgb']=array.copy()
-
-    def _process_seg(self,image):
-        image.convert(cc.CityScapesPalette)
-        i3=np.array(image.raw_data)
-        i3 = i3.reshape((image.height,image.width,4))[:,:,:3] 
-        self.data['seg']=i3.copy()
-
-    def _process_depth(self,image):
-        image.convert(cc.LogarithmicDepth)
-        i3=np.array(image.raw_data)
-        i3=i3.reshape((image.height,image.width,4))[:,:,:3]
-        self.data['dep']=i3.copy()
-
-
-    def _flush(self):
-        self.data={}
 
     def close(self):
         self.client.apply_batch([carla.command.DestroyActor(x)
@@ -134,6 +67,8 @@ class CarlaEnv:
         brake=action['br']
         control=carla.VehicleControl(throttle,steer,brake)
         self.vehicle.apply_control(control)
+
+        self.wrapper.step()
         self.step+=1
 
         if self.config.save and \
@@ -148,8 +83,8 @@ class CarlaEnv:
     
     def _save(self):
         printc('saving data to disk')
+        self.data=self.wrapper.retrieve()
         self.saver.save(self.data)
-        self._flush()
         
 
     def render(self,which):
