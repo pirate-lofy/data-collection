@@ -6,8 +6,10 @@ import re
 from common import *
 
 class Saver:
-    def __init__(self,flush=True):
+    def __init__(self,configs,flush=True):
+        self.configs=configs
         self.origins=origins.copy()
+        self.cams=[i for i in self.configs if 'cam' in i[0]]
 
         if flush:
             self._flush()
@@ -24,17 +26,27 @@ class Saver:
     def _reset(self):
         self._find_latest()
 
-    def _check_available(self,data):
-        for orig in self.origins:
-            if not orig[0] in data:
-                printc(orig[0] +' not included',MsgType.WARN,level=3)
+    def _check_available(self,data:dict)->None:
+        
+        # check for all cameras existance
+        if not len(self.cams)==len(data):
+            printc('not all cameras available',MsgType.ERROR,2)
+            for a in self.cams:
+                if not a in data:
+                    printc(f'camera number {a} not included',MsgType.ERROR,3)
+
+
+        for cam in data:
+            for orig in self.origins:
+                if not orig[0] in cam:
+                    printc(orig[0] +' not included',MsgType.WARN,level=3)
+     
+
+    def _check_sync(self)->bool:
         return True
 
-    def _check_sync(self):
-        return True
 
-
-    def _save_list(self,data):
+    def _save_list(self,data:tuple,cam:str)->None:
         name,lst=data
         for i,orig in enumerate(self.origins):
             if name==orig[0]:
@@ -43,19 +55,20 @@ class Saver:
                 count=orig[2]
                 break
         for img in lst:
-            npath=path+name+'-'+str(count)+'.jpg'
+            npath=path+cam+'-'+name+'-'+str(count)+'.jpg'
             count+=1
             self._save_img(npath,img)
         
         self.origins[index][2]=count
 
-    def _save_img(self,path,img):
+    def _save_img(self,path:str,img):
         cv.imwrite(path,img)    
 
 
-    def _save_data(self,data):
-        for d in data.items():
-            self._save_list(d)
+    def _save_data(self,data:dict)->None:
+        for cam,value in data.items():
+            for d in value.items():
+                self._save_list(d,cam)
 
 
         # updating counters
@@ -66,12 +79,11 @@ class Saver:
         self._find_latest()
 
     # accepts batch of data
-    def save(self,data):
+    def save(self,data:list)->None:
         self._flush()
-        self._check_available(data)
-        self._check_sync()
-        printc('saving check are done',level=2)
-
-        self._save_data(data)
+        for step in data:
+            self._check_available(step)
+            self._check_sync()
+            self._save_data(step)
         printc('done saving data to disk',level=2)
 
