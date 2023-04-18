@@ -2,12 +2,34 @@
 port : 2000
 host : '127.0.01'
 
-# cameras
-no_cams : 8
-image_x : 800
-image_y : 600
-fov : 110
-
 # general        
 save : True
-save_interval : 100
+save_interval : 1
+
+# cameras
+cam1:
+  image_x : 800
+  image_y : 600
+  fov : 110
+  location:
+    x: 1.1
+    y: 0
+    z: 2
+  orientation:
+    pitch: 0
+    yaw: 0
+    roll: 0
+
+cam2:
+  image_x : 800
+  image_y : 600
+  fov : 110
+  location:
+    x: -1.1
+    y: 0
+    z: 2
+  orientation:
+    pitch: 0
+    yaw: 0
+    roll: 0
+
