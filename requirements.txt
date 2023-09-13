@@ -1,0 +1,4 @@
+PyYaml
+attrdict
+opencv-python
+colorama
