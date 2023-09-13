@@ -1,38 +1,55 @@
-from cameras.camera import Camera
 
-from copy import deepcopy
+from cameras.camera import Camera
+from logger import Logger
 
 class Wrapper:
 
-    def __init__(self,configs,vehicle):
+    def __init__(self,configs,vehicle,world):
         self.configs=configs
         self.vehicle=vehicle
+        self.world=world
+        self.logger=Logger('Wrapper',self.configs)
 
-        self.init_attr()
-        self.num,self.meta_cames=self._parse_cameras()
+        self._init_attr()
+        self.logger.info('all attributes are initializes')
+        self.meta_cames=self._parse_cameras()
+        self.logger.info('all cameras are parsed from the configuration file')
         self._generate_cames()
+        self.logger.info('all cameras are generated and added to the wrapper')
 
 
     def _parse_cameras(self):
-        meta_cames=dict([i for i in self.configs.items() if 'cam' in i[0]])
-        return len(meta_cames),meta_cames
+        meta_cames=dict([i for i in self.configs['cameras'].items()])
+        return meta_cames
 
     
     def _generate_cames(self):
         for (k,v) in self.meta_cames.items():
-            c=Camera(k,v,self.vehicle)
+            c=Camera(self.configs,k,v,self.vehicle,self.world)
             self.cames.append(c)
             self.actors.extend(c.actors)
+            self.logger.debug(f'camera {c.name} is generated')
 
-    def init_attr(self):
+    def _init_attr(self):
         self.cames=[]
         self.actors=[]
         self.data=[]
 
-    def step(self):
-        self.data.append({cam.name:cam.data for cam in self.cames})
+    def _check_cam_data(self,data):
+        for type in self.configs.camera_types:
+            if not (type in data):
+                return False
+        return True
 
-    def retrieve(self):
-        data=deepcopy(self.data)
-        self.data=[]
-        return data
+    def step(self):
+        step_data=[]
+        for cam in self.cames:
+            if self._check_cam_data(cam.data):
+                step_data.append({cam.name:cam.data})
+        return step_data        
+
+    def get_actors(self):
+        return self.actors
+
+    def get_cames(self):
+        return self.cames
