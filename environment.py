@@ -111,6 +111,9 @@ class CarlaEnv:
         
 
     def _check_saving_interval(self,data):
+        # saving configurations
+        if not self.configs.save:
+            return
         if self.counter%self.configs.general.save_interval==0:
             self.data.append(data)
         self.counter+=1
