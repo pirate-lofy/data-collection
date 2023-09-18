@@ -1,6 +1,7 @@
 
 from cameras.camera import Camera
 from logger import Logger
+from common import *
 
 class Wrapper:
 
@@ -42,10 +43,10 @@ class Wrapper:
         return True
 
     def step(self):
-        step_data=[]
+        step_data={}
         for cam in self.cames:
             if self._check_cam_data(cam.data):
-                step_data.append({cam.name:cam.data})
+                step_data[cam.name]=cam.get_data()
         return step_data        
 
     def get_actors(self):
