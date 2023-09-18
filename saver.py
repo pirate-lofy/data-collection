@@ -1,6 +1,5 @@
 from glob import glob
 from os import path
-from turtle import st
 import cv2 as cv
 import re
 from common import *
@@ -10,6 +9,7 @@ class Saver:
         self.configs=configs
         self.origins=origins.copy()
         self.cams=[i for i in self.configs if 'cam' in i[0]]
+        self.iter=0
 
         if flush:
             self._flush()
@@ -80,10 +80,7 @@ class Saver:
 
     # accepts batch of data
     def save(self,data:list)->None:
-        self._flush()
         for step in data:
-            self._check_available(step)
-            self._check_sync()
-            self._save_data(step)
-        printc('done saving data to disk',level=2)
-
+            for cam,cam_data in step.items():
+                for sensor_name,sensor_data in cam_data.items():
+                    self._save_img(f'data/{sensor_name}-{cam}-{time.time()}.jpg',sensor_data)
