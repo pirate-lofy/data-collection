@@ -2,9 +2,12 @@
 port : 2000
 host : '127.0.01'
 
-# general        
-save : True
-save_interval : 1
+# general      
+general:  
+  save : True
+  save_interval : 10 # save a scene copy every save_interval
+  batch_size: 10 # size of the batch been written to disk
+  show: True
 
 # cameras
 cameras:
@@ -26,12 +29,12 @@ cameras:
     image_y : 600
     fov : 110
     location:
-      x: -1.1
+      x: -1.4
       y: 0
       z: 2
     orientation:
       pitch: 0
-      yaw: 0
+      yaw: 180
       roll: 0
 
 camera_types: ['rgb','seg','dep']
