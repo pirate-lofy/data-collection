@@ -85,7 +85,7 @@ class Camera:
         array = np.reshape(array, (image.height, image.width, 4))
         array = array[:, :, :3]
         self.data['rgb']=array.copy()
-
+        
     def _process_seg(self,image):
         image.convert(cc.CityScapesPalette)
         i3=np.array(image.raw_data)
@@ -98,6 +98,14 @@ class Camera:
         i3=i3.reshape((image.height,image.width,4))[:,:,:3]
         self.data['dep']=i3.copy()
 
+
+    def get_data(self):
+        '''
+            it won't work if you tried to access
+            self.data directrly from outside this class
+            as data would not change through time 
+        '''
+        return deepcopy(self.data)
 
     
     def __str__(self):
