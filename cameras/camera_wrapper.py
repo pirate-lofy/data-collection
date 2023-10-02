@@ -20,7 +20,7 @@ class Wrapper:
 
 
     def _parse_cameras(self):
-        meta_cames=dict([i for i in self.configs['cameras'].items() if i.enable])
+        meta_cames={k:v for k,v in self.configs['cameras'].items() if v['enable']}
         return meta_cames
 
     
