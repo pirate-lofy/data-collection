@@ -5,12 +5,26 @@ host : '127.0.01'
 # general      
 general:  
   save : False
+  show: True
   save_interval : 1 # save a scene copy every save_interval
   batch_size: 1 # size of the batch been written to disk
-  show: True
 
 # cameras
 cameras:
+  viz:
+    enable: True
+    image_x : 800
+    image_y : 600
+    fov : 110
+    location:
+      x: -5.5
+      y: 0
+      z: 2.8
+    orientation:
+      pitch: -15
+      yaw: 0
+      roll: 0
+
   cam1:
     enable: True
     image_x : 800

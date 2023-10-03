@@ -43,6 +43,7 @@ class Wrapper:
         return True
 
     def step(self):
+        self.visualize()
         step_data={}
         for cam in self.cames:
             if self._check_cam_data(cam.data):
@@ -54,3 +55,19 @@ class Wrapper:
 
     def get_cames(self):
         return self.cames
+
+    def visualize(self):
+        if not self.configs.general.show:
+            return 
+        for cam in self.cames:
+            if cam.name=='viz':
+                data=cam.get_data()
+                break
+        if not len(data):
+            return
+
+        cv.imshow('rgb',cv.resize(data['rgb'],(600,480)))
+        cv.imshow('seg',cv.resize(data['seg'],(600,480)))
+        cv.imshow('dep',cv.resize(data['dep'],(600,480)))
+        if cv.waitKey(1)==27:
+            raise Exception()
