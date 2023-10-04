@@ -3,6 +3,7 @@ from common import *
 
 from saver import Saver
 from logger import Logger
+from weather_controller import Weather
 from cameras.camera_wrapper import Wrapper
 from agents.navigation.behavior_agent import BehaviorAgent ,BasicAgent
 
@@ -37,6 +38,10 @@ class CarlaEnv:
         self.spawn_points = self.map.get_spawn_points() 
         destination=self._get_random_location()
         self.controller.set_destination(destination)
+
+        # Weather controller
+        self.weather=Weather(self.world)
+
 
     def _get_random_location(self):
         destination = random.choice(self.spawn_points).location
@@ -85,6 +90,7 @@ class CarlaEnv:
             2. apply a world tick 
             3. retrieve data from sensors
             4. aler saver class to save batch
+            5. change weather
         '''
         # 0
         if self.controller.done():
@@ -108,11 +114,14 @@ class CarlaEnv:
         # 4
         self._check_saving_interval(data)
         self._check_writing_interval()
+
+        # 5
+        self.weather.step()
         
 
     def _check_saving_interval(self,data):
         # saving configurations
-        if not self.configs.save:
+        if not self.configs.general.save:
             return
         if self.counter%self.configs.general.save_interval==0:
             self.data.append(data)
