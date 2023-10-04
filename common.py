@@ -12,13 +12,9 @@ import sys
 import numpy as np
 import cv2 as cv
 from copy import deepcopy
-
-origins=[
-        ['seg','data/seg/',0],
-        ['rgb','data/rgb/',0],
-        ['dep','data/dep/',0]
-        ]
-data_frames=['seg','rgb','dep']
+import math
+import glob
+import os
 
 
 class MsgType(Enum):
