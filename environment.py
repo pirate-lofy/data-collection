@@ -50,8 +50,6 @@ class CarlaEnv:
 
     def _init_attr(self):
         self.actors=[]
-        self.data=[]
-        self.counter=0 # number of sequential steps
 
 
 
@@ -89,7 +87,7 @@ class CarlaEnv:
             1. applies control to the vehicle 
             2. apply a world tick 
             3. retrieve data from sensors
-            4. aler saver class to save batch
+            4. alter saver class to save batch
             5. change weather
         '''
         # 0
@@ -112,27 +110,13 @@ class CarlaEnv:
         if not len(data):
             return 
         # 4
-        self._check_saving_interval(data)
-        self._check_writing_interval()
+        self.saver.save(data)
 
         # 5
         self.weather.step()
         
 
-    def _check_saving_interval(self,data):
-        # saving configurations
-        if not self.configs.general.save:
-            return
-        if self.counter%self.configs.general.save_interval==0:
-            self.data.append(data)
-        self.counter+=1
-
-
-    def _check_writing_interval(self):
-        if len(self.data) and len(self.data)%self.configs.general.batch_size==0:
-            self.saver.save(self.data)
-            self.data=[]
-            self.logger.info('saved one batch')
+    
 
 
     def close(self):
