@@ -84,5 +84,7 @@ class Weather(object):
         if self.elapsed_time > self.update_freq:
             self.tick(self.speed_factor * self.elapsed_time)
             self.world.set_weather(self.weather)
+            # sys.stdout.write('\r' + str(self) + 12 * ' ')
+            # sys.stdout.flush()
             self.elapsed_time = 0.0
 
