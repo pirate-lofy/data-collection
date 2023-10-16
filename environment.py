@@ -3,9 +3,10 @@ from common import *
 
 from saver import Saver
 from logger import Logger
+from spawner import Spawner
 from weather_controller import Weather
 from cameras.camera_wrapper import Wrapper
-from agents.navigation.behavior_agent import BehaviorAgent ,BasicAgent
+from agents.navigation.behavior_agent import BasicAgent
 
 
 
@@ -41,6 +42,10 @@ class CarlaEnv:
 
         # Weather controller
         self.weather=Weather(self.world)
+
+        # spawn players
+        self.spawner=Spawner(self.client,self.configs)
+        self.actors.extend(self.spawner.get_actors())
 
 
     def _get_random_location(self):
