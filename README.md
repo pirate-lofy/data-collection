@@ -15,5 +15,6 @@ Package can collect
 ## TODO
 - [x] Add better logging system
 - [x] Addind wrappers for supporting multiple cameras
-- [ ] Adding dynamic weather functionality
-- [ ] spawn multiple actors
+- [x] Adding dynamic weather functionality
+- [x] Spawn multiple actors
+- [ ] Change maps dynamically
